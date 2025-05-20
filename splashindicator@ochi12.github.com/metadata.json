@@ -1,0 +1,8 @@
+{
+  "name": "Splash Indicator",
+  "description": "A simple and non-obstructive way to show currently launching applications",
+  "uuid": "splashindicator@ochi12.github.com",
+  "shell-version": [
+    "48"
+  ]
+}
