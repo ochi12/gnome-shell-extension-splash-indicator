@@ -2,7 +2,11 @@
   "name": "Splash Indicator",
   "description": "A simple and non-obstructive way to show currently launching applications",
   "uuid": "splashindicator@ochi12.github.com",
+  "version": 1,
+  "version-name": "1.0.0",
   "shell-version": [
-    "48"
-  ]
+    "45", "46", "47" ,"48"
+  ],
+  "gettext-domain": "example@gjs.guide",
+  "url": "https://github.com/ochi12/gnome-shell-extension-splash-indicator"
 }
