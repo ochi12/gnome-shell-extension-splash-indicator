@@ -30,25 +30,29 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import Shell from 'gi://Shell';
 import Clutter from 'gi://Clutter';
 
-const Indicator = GObject.registerClass(
-class Indicator extends PanelMenu.Button {
+const SplashIndicator = GObject.registerClass(
+class SplashIndicator extends PanelMenu.Button {
     _init() {
-        super._init(0.0, _('My Shiny Indicator'));
+        super._init(0.0, _('Splash Indicator'));
 
         this._icontheme = new St.IconTheme();
 
+        const desaturateEffect = new Clutter.DesaturateEffect({factor: 1.0});
         this._icon = new St.Icon({
             style_class: 'system-status-icon',
         });
+        this._icon.add_effect(desaturateEffect);
+
         this._label = new St.Label({
             y_align: Clutter.ActorAlign.CENTER,
         });
 
-        const box = new St.BoxLayout({vertical: false});
+        const box = new St.BoxLayout({
+            vertical: false,
+            style_class: 'panel-button',
+        });
         box.add_child(this._icon);
         box.add_child(this._label);
-
-
         this.add_child(box);
 
         let item = new PopupMenu.PopupMenuItem(_('Show Notification'));
@@ -62,7 +66,7 @@ class Indicator extends PanelMenu.Button {
         if (this._icontheme.has_icon(iconName)) {
             this._icon.gicon = Gio.ThemedIcon.new(iconName);
         } else {
-            // recover original path without the added "-symbolic"
+            // for non symbolic icons
             const parts = iconName.split('-');
             const finalIconName = parts.slice(0, -1).join('-');
             console.log(`icon name: ${finalIconName}`);
@@ -76,7 +80,7 @@ class Indicator extends PanelMenu.Button {
 
     fade_in(iconName, appName) {
         this._setIcon(`${iconName}-symbolic`);
-        this._setLabel(`Launching ${appName}...`);
+        this._setLabel(_(`Launching ${appName}...`));
 
         this.remove_all_transitions();
         this.opacity = 0;
@@ -105,39 +109,74 @@ class Indicator extends PanelMenu.Button {
     }
 });
 
-export default class IndicatorExampleExtension extends Extension {
-    enable() {
-        this._indicator = new Indicator();
-        Main.panel.addToStatusArea(this.uuid, this._indicator, -1, 'left');
-
+class AppLaunchMonitor {
+    constructor(indicator) {
+        this._indicator = indicator;
+        this._startingApps = [];
         this._fadeOutDelayId = null;
 
         this._appMonitor = Shell.AppSystem.get_default();
-        this._appStateChangedId = this._appMonitor.connect('app-state-changed', (appSystem, object) => {
-            const appState = object.get_state();
+        this._appStateChangedId = this._appMonitor.connect(
+            'app-state-changed',
+            this._onAppStateChanged.bind(this)
+        );
+    }
 
-            if (appState ===  Shell.AppState.STARTING) {
-                console.log(`Openning App Named ${object.get_icon().to_string()}`);
-                const appName = object.get_name();
-                const iconName = object.get_icon().to_string();
+    _onAppStateChanged(appSystem, app) {
+        const appState = app.state;
+        const appId = app.id;
+
+        if (appState === Shell.AppState.STARTING) {
+            if (!this._startingApps.find(_app => _app.id === appId)) {
+                this._startingApps.push(app);
+
+                const appName = app.get_name();
+                const iconName = app.icon.to_string();
                 this._indicator.fade_in(iconName, appName);
-                if (this._fadeOutDelayId != null) {
-                    GLib.source_remove(this._fadeOutDelayId);
-                    this._fadeOutDelayId = null;
-                }
+            }
+
+            if (this._fadeOutDelayId !== null) {
+                GLib.source_remove(this._fadeOutDelayId);
+                this._fadeOutDelayId = null;
+            }
+        } else {
+            this._startingApps = this._startingApps.filter(_app => _app.id !== appId);
+
+            if (this._startingApps.length > 0) {
+                const previousApp = this._startingApps[this._startingApps.length - 1];
+                const appName = previousApp.get_name();
+                const iconName = previousApp.icon.to_string();
+                this._indicator.fade_in(iconName, appName);
             } else {
                 this._fadeOutDelayId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
                     this._indicator.fade_out();
                     return GLib.SOURCE_REMOVE;
                 });
             }
-        });
+        }
+    }
+
+    destroy() {
+        this._appMonitor.disconnect(this._appStateChangedId);
+        this._appMonitor = null;
+        this._startingApps = [];
+        this._fadeOutDelayId = null;
+    }
+}
+
+export default class IndicatorExampleExtension extends Extension {
+    enable() {
+        this._indicator = new SplashIndicator();
+        Main.panel.addToStatusArea(this.uuid, this._indicator, -1, 'left');
+
+        this._appMonitor = new AppLaunchMonitor(this._indicator);
     }
 
     disable() {
+        this._appMonitor.destroy();
+        this._appMonitor = null;
+
         this._indicator.destroy();
         this._indicator = null;
-        this._appMonitor.disconnect(this._appStateChangedId);
-        this._appMonitor = null;
     }
 }
