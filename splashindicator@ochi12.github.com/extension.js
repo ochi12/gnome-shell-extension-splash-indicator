@@ -153,7 +153,11 @@ class AppLaunchMonitor {
         this._appMonitor.disconnect(this._appStateChangedId);
         this._appMonitor = null;
         this._startingApps = [];
-        this._fadeOutDelayId = null;
+        if (this._fadeOutDelayId !== null) {
+            GLib.source_remove(this._fadeOutDelayId);
+            this._fadeOutDelayId = null;
+        }
+
     }
 }
 

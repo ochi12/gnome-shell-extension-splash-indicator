@@ -7,6 +7,6 @@
   "shell-version": [
     "45", "46", "47" ,"48"
   ],
-  "gettext-domain": "example@gjs.guide",
+  "gettext-domain": "splashindicator@ochi12.github.com",
   "url": "https://github.com/ochi12/gnome-shell-extension-splash-indicator"
 }
