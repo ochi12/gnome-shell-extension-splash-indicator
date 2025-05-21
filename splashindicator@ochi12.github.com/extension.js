@@ -54,12 +54,6 @@ class SplashIndicator extends PanelMenu.Button {
         box.add_child(this._icon);
         box.add_child(this._label);
         this.add_child(box);
-
-        let item = new PopupMenu.PopupMenuItem(_('Show Notification'));
-        item.connect('activate', () => {
-            Main.notify(_('Whatʼs up, folks?'));
-        });
-        this.menu.addMenuItem(item);
     }
 
     _setIcon(iconName) {
