@@ -1,5 +1,5 @@
-PACK_PATH = "splashindicator@ochi12.github.com.zip"
-EXTENSION_DIR = "splashindicator@ochi12.github.com"
+PACK_PATH = "splashindicator-dev@ochi12.github.com.zip"
+EXTENSION_DIR = "splashindicator-dev@ochi12.github.com"
 
 all: build install
 
