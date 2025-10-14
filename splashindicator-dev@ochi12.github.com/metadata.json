@@ -5,7 +5,7 @@
   "version": 1,
   "version-name": "1.0.0",
   "shell-version": [
-    "45", "46", "47" ,"48"
+    "45", "46", "47" ,"48", "49"
   ],
   "gettext-domain": "splashindicator-dev@ochi12.github.com",
   "url": "https://github.com/ochi12/gnome-shell-extension-splash-indicator"
