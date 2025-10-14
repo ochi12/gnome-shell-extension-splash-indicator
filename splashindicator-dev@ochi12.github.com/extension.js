@@ -22,7 +22,6 @@ import GLib from 'gi://GLib';
 import St from 'gi://St';
 
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
-import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
@@ -30,9 +29,14 @@ import Shell from 'gi://Shell';
 import Clutter from 'gi://Clutter';
 
 const SplashIndicator = GObject.registerClass(
-class SplashIndicator extends PanelMenu.Button {
+class SplashIndicator extends St.BoxLayout {
     _init() {
-        super._init(0.0, _('Splash Indicator'));
+        super._init({
+            orientation: Clutter.Orientation.HORIZONTAL,
+            style_class: 'panel-button',
+        });
+
+        this.set_style('padding: 0');
 
         this._icontheme = new St.IconTheme();
 
@@ -46,13 +50,8 @@ class SplashIndicator extends PanelMenu.Button {
             y_align: Clutter.ActorAlign.CENTER,
         });
 
-        const box = new St.BoxLayout({
-            vertical: false,
-            style_class: 'panel-button',
-        });
-        box.add_child(this._icon);
-        box.add_child(this._label);
-        this.add_child(box);
+        this.add_child(this._icon);
+        this.add_child(this._label);
     }
 
     _setIcon(iconName) {
@@ -99,6 +98,20 @@ class SplashIndicator extends PanelMenu.Button {
                 this.hide();
             },
         });
+    }
+
+    destroy() {
+        if (this._icon) {
+            this._icon.destroy();
+            this._icon = null;
+        }
+
+        if (this._label) {
+            this._label.destroy();
+            this._label = null;
+        }
+
+        super.destroy();
     }
 });
 
@@ -157,23 +170,27 @@ class AppLaunchMonitor {
             GLib.source_remove(this._fadeOutDelayId);
             this._fadeOutDelayId = null;
         }
-
     }
 }
 
 export default class IndicatorExampleExtension extends Extension {
     enable() {
         this._indicator = new SplashIndicator();
-        Main.panel.addToStatusArea(this.uuid, this._indicator, -1, 'left');
+
+        Main.panel._leftBox.add_child(this._indicator);
 
         this._appMonitor = new AppLaunchMonitor(this._indicator);
     }
 
     disable() {
-        this._appMonitor.destroy();
-        this._appMonitor = null;
+        if (this._appMonitor) {
+            this._appMonitor.destroy();
+            this._appMonitor = null;
+        }
 
-        this._indicator.destroy();
-        this._indicator = null;
+        if (this._indicator) {
+            this._indicator.destroy();
+            this._indicator = null;
+        }
     }
 }
